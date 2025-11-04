@@ -1,0 +1,21 @@
+# Exemplo de CPFs para teste
+
+Este arquivo contém CPFs de exemplo para testar o sistema.
+Para usar no sistema, crie uma planilha Excel com estes CPFs:
+
+CPF de Exemplo (fornecido pelo usuário):
+40644169885
+
+Outros formatos aceitos na planilha:
+- 406.441.698-85
+- 40644169885
+
+Instruções:
+1. Abra o Excel ou Google Sheets
+2. Cole os CPFs em qualquer coluna
+3. Salve como .xlsx ou .xls
+4. Faça upload no sistema
+
+O sistema reconhecerá automaticamente os CPFs em qualquer célula da planilha,
+independente de estarem formatados ou não.
+
