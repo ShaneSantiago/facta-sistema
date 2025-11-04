@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../config/supabase';
 
 const TOKEN_STORAGE_KEY = 'facta_auth_token';
 const TOKEN_EXPIRY_KEY = 'facta_token_expiry';
@@ -11,7 +12,37 @@ const TOKEN_EXPIRY_KEY = 'facta_token_expiry';
  */
 export const gerarToken = async (login, senha) => {
   try {
-    // Em desenvolvimento usa proxy, em produção usa URL direta da API externa
+    // Em desenvolvimento usa proxy, em produção usa URL direta da API externa por padrão
+    // Opcionalmente, em produção pode usar Supabase Edge Function como proxy (sem CORS)
+    const useSupabase = !import.meta.env.DEV && (import.meta.env.VITE_USE_SUPABASE_PROXY === 'true');
+
+    if (useSupabase) {
+      const { data, error } = await supabase.functions.invoke('facta-proxy', {
+        body: { action: 'gera-token', login, senha }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro na função Supabase');
+      }
+
+      if (data?.erro) {
+        throw new Error(data?.mensagem || 'Erro ao gerar token');
+      }
+
+      const { token, expira } = data;
+      
+      // Salva token e data de expiração no localStorage
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      localStorage.setItem(TOKEN_EXPIRY_KEY, expira);
+
+      return {
+        success: true,
+        token,
+        expira,
+        message: data?.mensagem
+      };
+    }
+
     const url = import.meta.env.DEV 
       ? '/gera-token' 
       : 'https://cltoff-homol.facta.com.br/gera-token';

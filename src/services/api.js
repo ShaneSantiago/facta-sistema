@@ -1,10 +1,14 @@
 import axios from 'axios';
 import { obterToken } from './auth';
+import { supabase } from '../config/supabase';
 
 // Em desenvolvimento usa proxy (/api), em produção usa URL direta da API Facta
 const API_BASE_URL = import.meta.env.DEV
   ? '/api'
   : 'https://cltoff-homol.facta.com.br';
+
+// Flag opcional para usar Supabase Edge Functions como proxy em produção
+const USE_SUPABASE_PROXY = import.meta.env.VITE_USE_SUPABASE_PROXY === 'true';
 
 // Instância do Axios configurada
 const api = axios.create({
@@ -39,6 +43,28 @@ export const buscarPorCPF = async (cpf) => {
     // Remove qualquer formatação do CPF (pontos, hífen)
     const cpfLimpo = cpf.replace(/\D/g, '');
     
+    // Se estiver habilitado, chama Supabase Function para contornar CORS
+    if (!import.meta.env.DEV && USE_SUPABASE_PROXY) {
+      const token = obterToken();
+      const { data, error } = await supabase.functions.invoke('facta-proxy', {
+        body: { action: 'buscar-cpf', cpf: cpfLimpo, token }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro na função Supabase');
+      }
+
+      if (data?.erro) {
+        throw new Error(data?.mensagem || 'Erro ao buscar dados');
+      }
+
+      return {
+        success: true,
+        data: data?.dados || [],
+        message: data?.mensagem
+      };
+    }
+
     const response = await api.get(`/base-offline?cpf=${cpfLimpo}`);
     
     if (response.data.erro) {
