@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { obterToken } from './auth';
 
-// Em desenvolvimento usa proxy (/api), em produção usa Netlify Functions
-// Isso resolve o CORS tanto em dev quanto em produção
-const API_BASE_URL = import.meta.env.DEV 
+// Em desenvolvimento usa proxy (/api), em produção usa URL direta da API Facta
+const API_BASE_URL = import.meta.env.DEV
   ? '/api'
-  : '/.netlify/functions/api-proxy';
+  : 'https://cltoff-homol.facta.com.br';
 
 // Instância do Axios configurada
 const api = axios.create({

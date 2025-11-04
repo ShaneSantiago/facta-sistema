@@ -11,23 +11,16 @@ const TOKEN_EXPIRY_KEY = 'facta_token_expiry';
  */
 export const gerarToken = async (login, senha) => {
   try {
-    // Em desenvolvimento usa proxy, em produção usa Netlify Function
+    // Em desenvolvimento usa proxy, em produção usa URL direta da API externa
     const url = import.meta.env.DEV 
       ? '/gera-token' 
-      : '/.netlify/functions/gera-token';
+      : 'https://cltoff-homol.facta.com.br/gera-token';
     
-    // Em produção, enviar credenciais no body via POST
-    // Em desenvolvimento, usar Basic Auth
-    const response = import.meta.env.DEV
-      ? await axios.get(url, {
-          headers: {
-            'Authorization': `Basic ${btoa(`${login}:${senha}`)}`
-          }
-        })
-      : await axios.post(url, {
-          login,
-          senha
-        });
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `Basic ${btoa(`${login}:${senha}`)}`
+      }
+    });
 
     if (response.data.erro) {
       throw new Error(response.data.mensagem || 'Erro ao gerar token');
