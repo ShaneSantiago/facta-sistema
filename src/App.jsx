@@ -13,7 +13,7 @@ import {
   atualizarResultados 
 } from './utils/storage';
 import { removerDuplicatas, contarDuplicatas } from './utils/deduplicar';
-import { estaAutenticado, obterToken } from './services/auth';
+import { estaAutenticado, obterToken, removerToken } from './services/auth';
 import { 
   estaAutenticadoSupabase, 
   obterCredenciaisFacta,
@@ -422,17 +422,25 @@ function App() {
 
   // Função para fazer logout completo
   const handleLogoutCompleto = async () => {
-    const confirmar = window.confirm(
-      'Deseja realmente sair do sistema?'
-    );
+    const confirmar = window.confirm('Deseja realmente sair do sistema?');
 
-    if (confirmar) {
+    if (!confirmar) return;
+
+    try {
       await logoutSupabase();
-      setAutenticadoSupabase(false);
-      setAutenticado(false);
-      setUsuarioAtual(null);
-      window.location.reload();
+    } catch (e) {
+      // ignore
     }
+
+    // Limpa token Facta e volta para tela de login sem recarregar
+    try { removerToken(); } catch {}
+
+    setAutenticadoSupabase(false);
+    setAutenticado(false);
+    setUsuarioAtual(null);
+    setMostrarLoginSupabase(true);
+    setMostrarLogin(false);
+    mostrarNotificacao('Sessão encerrada', 'Faça login para continuar.');
   };
 
   // Tela de carregamento
@@ -488,20 +496,22 @@ function App() {
             <Subtitle>Sistema de Consulta de Trabalhadores</Subtitle>
           </LogoText>
         </LogoSection>
-        {usuarioAtual && (
+        {autenticadoSupabase && (
           <UserSection>
-            <UserCard>
-              <UserAvatar>
-                <HiUser />
-              </UserAvatar>
-              <UserInfo>
-                <UserName>{usuarioAtual.nome}</UserName>
-                <UserEmail>
-                  <HiMail />
-                  {usuarioAtual.email}
-                </UserEmail>
-              </UserInfo>
-            </UserCard>
+            {usuarioAtual && (
+              <UserCard>
+                <UserAvatar>
+                  <HiUser />
+                </UserAvatar>
+                <UserInfo>
+                  <UserName>{usuarioAtual.nome}</UserName>
+                  <UserEmail>
+                    <HiMail />
+                    {usuarioAtual.email}
+                  </UserEmail>
+                </UserInfo>
+              </UserCard>
+            )}
             <LogoutButton onClick={handleLogoutCompleto}>
               <HiLogout />
               Sair
