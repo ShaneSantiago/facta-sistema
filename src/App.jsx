@@ -6,6 +6,7 @@ import ResultsTable from './components/ResultsTable';
 import LoginModal from './components/LoginModal';
 import TokenBar from './components/TokenBar';
 import SupabaseLogin from './components/SupabaseLogin';
+import AlterarSenha from './components/AlterarSenha';
 import { 
   carregarResultados, 
   salvarResultados, 
@@ -250,6 +251,14 @@ function App() {
   const [autenticadoSupabase, setAutenticadoSupabase] = useState(false);
   const [usuarioAtual, setUsuarioAtual] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [hash, setHash] = useState(window.location.hash);
+
+  // Ouve mudanças no hash para permitir rota oculta sem links
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Carrega resultados e verifica autenticação ao montar
   useEffect(() => {
@@ -453,7 +462,7 @@ function App() {
               <HiBriefcase />
             </LogoIcon>
             <LogoText>
-              <Logo>Facta CLT</Logo>
+              <Logo>Consulta CLT</Logo>
               <Subtitle>Carregando...</Subtitle>
             </LogoText>
           </LogoSection>
@@ -462,7 +471,7 @@ function App() {
     );
   }
 
-  // Tela de login Supabase
+  // Tela de login Supabase (obrigatória para qualquer rota, inclusive alterar-senha)
   if (mostrarLoginSupabase && !autenticadoSupabase) {
     return (
       <>
@@ -473,13 +482,37 @@ function App() {
                 <HiBriefcase />
               </LogoIcon>
               <LogoText>
-                <Logo>Facta CLT</Logo>
+                <Logo>Consulta CLT</Logo>
                 <Subtitle>Sistema de Consulta de Trabalhadores</Subtitle>
               </LogoText>
             </LogoSection>
           </Header>
         </AppContainer>
         <SupabaseLogin onSuccess={handleLoginSupabaseSuccess} />
+      </>
+    );
+  }
+
+  // Tela oculta de Alterar Senha via hash route
+  if (hash === '#/alterar-senha') {
+    return (
+      <>
+        <AppContainer>
+          <Header>
+            <LogoSection>
+              <LogoIcon>
+                <HiBriefcase />
+              </LogoIcon>
+              <LogoText>
+                <Logo>Consulta CLT</Logo>
+                <Subtitle>Alteração de Senha</Subtitle>
+              </LogoText>
+            </LogoSection>
+          </Header>
+          <MainContent>
+            <AlterarSenha />
+          </MainContent>
+        </AppContainer>
       </>
     );
   }
@@ -492,7 +525,7 @@ function App() {
             <HiBriefcase />
           </LogoIcon>
           <LogoText>
-            <Logo>Facta CLT</Logo>
+            <Logo>Consulta CLT</Logo>
             <Subtitle>Sistema de Consulta de Trabalhadores</Subtitle>
           </LogoText>
         </LogoSection>

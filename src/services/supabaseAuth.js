@@ -213,3 +213,32 @@ export const estaAutenticadoSupabase = async () => {
   }
 };
 
+/**
+ * Altera a senha do usuário no Supabase
+ * - Verifica credenciais com signIn
+ * - Atualiza a senha via updateUser
+ * @param {string} email
+ * @param {string} senhaAtual
+ * @param {string} novaSenha
+ */
+export const alterarSenhaSupabase = async (email, senhaAtual, novaSenha) => {
+  try {
+    // Garante sessão válida validando senha atual
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: senhaAtual
+    });
+    if (loginError) throw loginError;
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: novaSenha
+    });
+    if (updateError) throw updateError;
+
+    return { success: true, message: 'Senha atualizada com sucesso' };
+  } catch (error) {
+    console.error('Erro ao alterar senha:', error);
+    return { success: false, message: error.message || 'Erro ao alterar senha' };
+  }
+};
+
