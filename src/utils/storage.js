@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'facta_consultas';
+const JOB_STORAGE_KEY = 'facta_job_lote';
 
 /**
  * Salva resultados no localStorage
@@ -73,6 +74,56 @@ export const removerResultado = (cpf, timestamp) => {
     return true;
   } catch (error) {
     console.error('Erro ao remover resultado:', error);
+    return false;
+  }
+};
+
+/**
+ * Salva o estado do processamento em lote (planilha, CPFs, progresso, pausa)
+ * @param {Object} estado - Objeto contendo arquivoNome, cpfs, limite, progresso, pausado, processando
+ */
+export const salvarEstadoLote = (estado) => {
+  try {
+    const payload = {
+      arquivoNome: estado.arquivoNome || null,
+      cpfs: Array.isArray(estado.cpfs) ? estado.cpfs : [],
+      limite: typeof estado.limite === 'number' ? estado.limite : parseInt(estado.limite) || 0,
+      progresso: estado.progresso || { current: 0, total: 0 },
+      pausado: !!estado.pausado,
+      processando: !!estado.processando,
+      atualizadoEm: new Date().toISOString()
+    };
+    localStorage.setItem(JOB_STORAGE_KEY, JSON.stringify(payload));
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar estado de lote no localStorage:', error);
+    return false;
+  }
+};
+
+/**
+ * Carrega o estado do processamento em lote
+ * @returns {Object|null} - Estado salvo ou null
+ */
+export const carregarEstadoLote = () => {
+  try {
+    const dados = localStorage.getItem(JOB_STORAGE_KEY);
+    return dados ? JSON.parse(dados) : null;
+  } catch (error) {
+    console.error('Erro ao carregar estado de lote do localStorage:', error);
+    return null;
+  }
+};
+
+/**
+ * Limpa o estado do processamento em lote
+ */
+export const limparEstadoLote = () => {
+  try {
+    localStorage.removeItem(JOB_STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Erro ao limpar estado de lote no localStorage:', error);
     return false;
   }
 };

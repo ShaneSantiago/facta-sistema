@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { lerArquivoExcel, isArquivoExcel } from '../utils/excelParser';
 import { buscarMultiplosCPFs } from '../services/api';
 import { HiDocumentText, HiUpload, HiPlay, HiPause, HiStop, HiTrash, HiCheckCircle } from 'react-icons/hi';
+import { carregarEstadoLote, salvarEstadoLote, limparEstadoLote } from '../utils/storage';
 
 const Container = styled.div`
   background: white;
@@ -273,6 +274,21 @@ const BulkUpload = ({ onResultados }) => {
   const fileInputRef = useRef(null);
   const shouldContinueRef = useRef(true);
 
+  // Restaura estado salvo (arquivo, CPFs, progresso e pausa) ao montar
+  useEffect(() => {
+    const estado = carregarEstadoLote();
+    if (estado && Array.isArray(estado.cpfs) && estado.cpfs.length > 0) {
+      setArquivo(estado.arquivoNome ? { name: estado.arquivoNome } : { name: 'Planilha' });
+      setCpfs(estado.cpfs);
+      setLimite((estado.limite || estado.cpfs.length).toString());
+      setProgresso(estado.progresso || { current: 0, total: estado.cpfs.length });
+      setPausado(!!estado.pausado);
+      setProcessando(false);
+      // Sempre inicia interrompido para não continuar sozinho após reload
+      shouldContinueRef.current = false;
+    }
+  }, []);
+
   const handleFileSelect = async (file) => {
     if (!file) return;
 
@@ -292,6 +308,14 @@ const BulkUpload = ({ onResultados }) => {
       setArquivo(file);
       setCpfs(cpfsExtraidos);
       setLimite(cpfsExtraidos.length.toString());
+      salvarEstadoLote({
+        arquivoNome: file.name,
+        cpfs: cpfsExtraidos,
+        limite: cpfsExtraidos.length,
+        progresso: { current: 0, total: cpfsExtraidos.length },
+        pausado: false,
+        processando: false,
+      });
     } catch (error) {
       alert(error.message);
     }
@@ -332,6 +356,14 @@ const BulkUpload = ({ onResultados }) => {
     setPausado(false);
     shouldContinueRef.current = true;
     setProgresso({ current: 0, total: cpfsParaProcessar.length });
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: cpfsParaProcessar.length,
+      progresso: { current: 0, total: cpfsParaProcessar.length },
+      pausado: false,
+      processando: true,
+    });
 
     const resultados = await buscarMultiplosCPFs(
       cpfsParaProcessar,
@@ -339,6 +371,14 @@ const BulkUpload = ({ onResultados }) => {
         setProgresso({
           current: progressInfo.current,
           total: progressInfo.total
+        });
+        salvarEstadoLote({
+          arquivoNome: arquivo?.name,
+          cpfs,
+          limite: progressInfo.total,
+          progresso: { current: progressInfo.current, total: progressInfo.total },
+          pausado: false,
+          processando: true,
         });
         
         // Envia resultado individual para o componente pai
@@ -348,16 +388,40 @@ const BulkUpload = ({ onResultados }) => {
     );
 
     setProcessando(false);
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: progresso.total,
+      progresso,
+      pausado: false,
+      processando: false,
+    });
   };
 
   const handlePausar = () => {
     setPausado(true);
     shouldContinueRef.current = false;
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: progresso.total || cpfs.length,
+      progresso,
+      pausado: true,
+      processando: false,
+    });
   };
 
   const handleRetomar = () => {
     setPausado(false);
     shouldContinueRef.current = true;
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: progresso.total || cpfs.length,
+      progresso,
+      pausado: false,
+      processando: true,
+    });
     
     // Retoma processamento com CPFs restantes
     const cpfsRestantes = cpfs.slice(progresso.current);
@@ -380,6 +444,14 @@ const BulkUpload = ({ onResultados }) => {
           current: offset + progressInfo.current,
           total: progresso.total
         });
+        salvarEstadoLote({
+          arquivoNome: arquivo?.name,
+          cpfs,
+          limite: progresso.total,
+          progresso: { current: offset + progressInfo.current, total: progresso.total },
+          pausado: false,
+          processando: true,
+        });
         
         onResultados([progressInfo.resultado]);
       },
@@ -387,6 +459,14 @@ const BulkUpload = ({ onResultados }) => {
     );
 
     setProcessando(false);
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: progresso.total,
+      progresso,
+      pausado: false,
+      processando: false,
+    });
   };
 
   const handleCancelar = () => {
@@ -394,6 +474,14 @@ const BulkUpload = ({ onResultados }) => {
     setProcessando(false);
     setPausado(false);
     setProgresso({ current: 0, total: 0 });
+    salvarEstadoLote({
+      arquivoNome: arquivo?.name,
+      cpfs,
+      limite: cpfs.length,
+      progresso: { current: 0, total: 0 },
+      pausado: false,
+      processando: false,
+    });
   };
 
   const handleLimpar = () => {
@@ -404,6 +492,7 @@ const BulkUpload = ({ onResultados }) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    limparEstadoLote();
   };
 
   const progressoPercentual = progresso.total > 0 
