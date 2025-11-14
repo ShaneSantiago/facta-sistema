@@ -66,3 +66,4 @@ export const contarDuplicatas = (resultados) => {
   return total;
 };
 
+

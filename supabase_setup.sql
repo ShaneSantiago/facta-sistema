@@ -124,3 +124,4 @@ CREATE INDEX IF NOT EXISTS idx_logs_data ON logs_consultas(data_consulta DESC);
 -- Para criar usuário via SQL (após criar no Auth):
 -- INSERT INTO usuarios_facta VALUES (...);
 
+

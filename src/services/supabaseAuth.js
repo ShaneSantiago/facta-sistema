@@ -242,3 +242,4 @@ export const alterarSenhaSupabase = async (email, senhaAtual, novaSenha) => {
   }
 };
 
+

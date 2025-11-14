@@ -19,3 +19,4 @@ Instruções:
 O sistema reconhecerá automaticamente os CPFs em qualquer célula da planilha,
 independente de estarem formatados ou não.
 
+
